@@ -1,0 +1,45 @@
+BASH:
+  extension: sh
+  singleDelimiter: "#"
+
+C:
+  extension: [c, h]
+  singleDelimiter: //
+  delimiterPair: 
+    - ["/*", "*/"]
+
+CPLUSPLUS:
+  extension: cpp
+  singleDelimiter: //
+  delimiterPair:
+    - ["/*", "*/"]
+
+JAVA:
+  extension: java
+  singleDelimiter: //
+  delimiterPair: 
+    - ["/*", "*/"]
+
+MATLAB:
+  extension: m
+  singleDelimiter: "%"
+  delimiterPair:
+    - ["%{", "%}"]
+    - ["...", "..."]
+
+PYTHON:
+  extension: py
+  singleDelimiter: "#"
+  delimiterPair: 
+    - ["'''", "'''"]
+    - ['"""', '"""']
+
+R:
+  extension: R
+  singleDelimiter: "#"
+
+SAS:
+  extension: sas
+  delimiterPair: 
+    - ["*", ";"]
+    - ["/*", "*/"]

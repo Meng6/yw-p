@@ -1,2 +1,2 @@
-# yw-p
+# YesWorkflow
 Python implementation of YesWorkflow

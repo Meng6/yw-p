@@ -1,0 +1,42 @@
+[project]
+name = "yesworkflow"
+dynamic = ["version", "scripts"]
+authors = [
+]
+description = "Python implementation of YesWorkflow"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.7"
+keywords = ["yesworkflow"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3"
+]
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+[tool.setuptools.dynamic]
+version = {attr = "yesworkflow._version.__version__"}
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+"Homepage" = "http://localhost:8000"
+
+[build-system]
+requires = ["setuptools", "wheel", "nbformat"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+combine_as_imports = true
+skip_gitignore = true
+#skip = [""]  # use default settings for now
