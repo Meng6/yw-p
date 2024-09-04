@@ -1,5 +1,5 @@
 from yesworkflow.language.infer_language import load_language_config, infer_language
-import click, os
+import click, os, io
 
 # Definitions of the standard keyword for the each tag.
 STANDARD_AS_KEYWORD     = "@as"
@@ -37,9 +37,14 @@ def get_delimiters(config_language, language):
         delimiterPair = config_language[language].get('delimiterPair', None)
     return singleDelimiter, delimiterPair
 
-def match_comments(source, singleDelimiter, delimiterPair):
+def match_comments(source, singleDelimiter, delimiterPair, isString=False):
     comments = []
-    with open(source, 'r') as f:
+    if isString:
+        f = io.StringIO(source)
+    else:
+        f = open(source, 'r')
+    
+    with f:
         lines = f.readlines()
         comment, right, line2check = '', False, False
         for line in lines:
@@ -82,11 +87,13 @@ def match_comments(source, singleDelimiter, delimiterPair):
 def match_keywords(comments, keywords):
     annotations = []
     for comment in comments:
+        idx = -1
         for keyword in keywords:
             idxk = comment.lower().find(keyword)
             if idxk != -1:
-                annotations.append(comment[idxk:])
-                break
+                idx = min(idx, idxk) if idx != -1 else idxk
+        if idx != -1:
+            annotations.append(comment[idx:])
     return annotations
 
 @click.command(help='Identify YW comments in script source file(s)')

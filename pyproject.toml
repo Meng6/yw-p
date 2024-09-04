@@ -27,7 +27,7 @@ dependencies = {file = ["requirements.txt"]}
 "Homepage" = "http://localhost:8000"
 
 [build-system]
-requires = ["setuptools", "wheel", "nbformat"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
