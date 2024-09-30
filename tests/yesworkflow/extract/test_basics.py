@@ -171,3 +171,34 @@ def test_extract_multipleCommentsOnOneLine():
     expected_annotations = ['@begin step @in x @as horiz @param y @as vert @end step']
     comments = check_match_comments(source, singleDelimiter, delimiterPair, expected_comments)
     check_match_keywords(comments, KEYWORDS, expected_annotations)
+
+def test_extract_blockMultipleComments_withAliasesOnDifferentLines():
+    lines = [
+        '""" @begin step   ',
+        '  some code ',
+        '   # @in x',
+        '    # @as horiz """some code',
+        '     more code',
+        '     more code',
+        ' #    @param y ',
+        '  #@as vert',
+        '     more code',
+        '     more code',
+        '    #  @end step']
+    source = '\n'.join(lines)
+    singleDelimiter, delimiterPair = '#', [['"""', '"""']]
+
+    expected_comments = [
+        '@begin step\nsome code\n# @in x\n# @as horiz',
+        '@param y',
+        '@as vert',
+        '@end step'
+    ]
+    expected_annotations = [
+        '@begin step\nsome code\n# @in x\n# @as horiz',
+        '@param y',
+        '@as vert',
+        '@end step'
+    ]
+    comments = check_match_comments(source, singleDelimiter, delimiterPair, expected_comments)
+    check_match_keywords(comments, KEYWORDS, expected_annotations)

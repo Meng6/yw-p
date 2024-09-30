@@ -52,10 +52,10 @@ def match_comments(source, singleDelimiter, delimiterPair, isString=False):
             if right:
                 idxr = line.find(right)
                 if idxr != -1:
-                    comments.append('{} {}'.format(comment, line[:idxr].strip()))
+                    comments.append('{}\n{}'.format(comment, line[:idxr].strip()))
                     comment, right = '', False
                 else:
-                    comment = '{} {}'.format(comment, line.strip())
+                    comment = '{}\n{}'.format(comment, line.strip())
             else:
                 if delimiterPair:
                     for dp in delimiterPair:
@@ -63,9 +63,9 @@ def match_comments(source, singleDelimiter, delimiterPair, isString=False):
                         lenl = len(left)
                         idxl = line.find(left)
                         if idxl != -1:
-                            idxr = line.find(right)
+                            idxr = line[idxl+lenl:].find(right)
                             if idxr != -1:
-                                comments.append(line[idxl+lenl:idxr].strip())
+                                comments.append(line[idxl+lenl:idxl+lenl+idxr].strip())
                                 right = False
                             else:
                                 comment = line[idxl+lenl:].strip()
