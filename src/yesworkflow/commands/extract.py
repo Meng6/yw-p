@@ -96,14 +96,7 @@ def match_keywords(comments, keywords):
             annotations.append(comment[idx:])
     return annotations
 
-@click.command(help='Identify YW comments in script source file(s)')
-@click.argument('sources', nargs=-1)  # Accepts zero or more arguments
-@click.pass_context
-def extract(ctx, sources):
-
-    # Fetch properties
-    properties = ctx.obj['properties']
-
+def extract_annotations(properties, sources):
     # Language config
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_language_path = os.path.join(script_dir, '../language/language.yaml')
@@ -128,7 +121,18 @@ def extract(ctx, sources):
             singleDelimiter, delimiterPair = get_delimiters(config_language, language)
             comments = match_comments(source, singleDelimiter, delimiterPair)
         annotations.extend(match_keywords(comments, KEYWORDS))
-    
+    return annotations
+
+@click.command(help='Identifies YW comments in script source file(s)')
+@click.argument('sources', nargs=-1)  # Accepts zero or more arguments
+@click.pass_context
+def extract(ctx, sources):
+
+    # Fetch properties
+    properties = ctx.obj['properties']
+    # Extract annotations
+    annotations = extract_annotations(properties, sources)
+    # Show annotations
     listfile = properties['extract.listfile']
     if listfile:
         if isinstance(listfile, bool):
@@ -139,3 +143,4 @@ def extract(ctx, sources):
                 for annotation in annotations:
                     f.write('{}\n'.format(annotation))
                     click.echo(annotation)
+    return annotations

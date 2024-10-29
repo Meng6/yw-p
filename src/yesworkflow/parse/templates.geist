@@ -1,0 +1,340 @@
+{% template prefix %}
+    PREFIX yw: <https://www.openskope.org/yesworkflow/>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+{% endtemplate %}
+
+{% template query_workflow workflow %}
+    SELECT ?block
+    WHERE {
+        ?block rdf:type yw:Block .
+        ?block yw:hasName "{{workflow}}" .
+    }
+{% endtemplate %}
+
+{% template select_workflow %}
+    ?block rdf:type yw:Block .
+    ?block yw:isTopLevelWorkflow "true" .
+{% endtemplate %}
+
+{% template query_inflow_connects_to_channel %}
+    SELECT ?block ?port
+    WHERE {
+        {% select_workflow %}
+        ?block yw:hasInput ?port .
+    }
+{% endtemplate %}
+
+{% template query_outflow_connects_to_channel %}
+    SELECT ?block ?port
+    WHERE {
+        {% select_workflow %}
+        ?block yw:hasOutput ?port .
+    }
+{% endtemplate %}
+
+{% template query_toplevel_data %}
+    SELECT DISTINCT
+           (COALESCE(?alias, ?name) AS ?name) 
+           (CONCAT("[", COALESCE(?alias, ?name), "]") AS ?qualified_name)
+    WHERE {
+        {% select_workflow %}
+        ?block ?hasPort ?port .
+        VALUES ?hasPort { yw:hasInput yw:hasOutput }
+        
+        ?port yw:hasName ?name .
+        OPTIONAL { ?port yw:hasAlias ?alias . }
+    }
+{% endtemplate %}
+
+{% template query_toplevel_data_linksto_port %}
+    SELECT ?data ?port
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data yw:hasQualifiedName ?qualified_name .
+
+        {% select_workflow %}
+        ?block ?hasPort ?port .
+        VALUES ?hasPort { yw:hasInput yw:hasOutput }
+        ?port yw:hasName ?name .
+        OPTIONAL { ?port yw:hasAlias ?alias . }
+        BIND(CONCAT("[", COALESCE(?alias, ?name), "]") AS ?generatedQualifiedName)
+
+        FILTER (?qualified_name = ?generatedQualifiedName)
+    }
+{% endtemplate %}
+
+{% template query_sublevel_data %}
+    SELECT DISTINCT
+           (COALESCE(?alias, ?name) AS ?name) 
+           (CONCAT(?topName, "[", COALESCE(?alias, ?name), "]") AS ?qualified_name)
+    WHERE {
+        {% select_workflow %}
+        ?block yw:hasName ?topName .
+        ?block yw:hasNestedBlock ?nestedBlock .
+        ?nestedBlock ?hasPort ?port .
+        VALUES ?hasPort { yw:hasInput yw:hasOutput }
+        
+        ?port yw:hasName ?name .
+        OPTIONAL { ?port yw:hasAlias ?alias . }
+    }
+{% endtemplate %}
+
+{% template query_sublevel_data_linksto_port %}
+    SELECT ?data ?port
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data yw:hasQualifiedName ?qualified_name .
+
+        {% select_workflow %}
+        ?block yw:hasName ?topName .
+        ?block yw:hasNestedBlock ?nestedBlock .
+        ?nestedBlock ?hasPort ?port .
+        VALUES ?hasPort { yw:hasInput yw:hasOutput }
+        ?port yw:hasName ?name .
+        OPTIONAL { ?port yw:hasAlias ?alias . }
+        BIND(CONCAT(?topName, "[", COALESCE(?alias, ?name), "]") AS ?generatedQualifiedName)
+
+        FILTER (?qualified_name = ?generatedQualifiedName)
+    }
+{% endtemplate %}
+
+{% template subquery_nestedblock_to_nestedblock %}
+    {
+        {
+            SELECT ?port1 (COALESCE(?alias, ?name) AS ?name1)
+            WHERE {
+                {% select_workflow %}
+                ?block yw:hasNestedBlock ?nestedBlock1 .
+                ?nestedBlock1 yw:hasOutput ?port1 .
+                ?port1 yw:hasName ?name .
+                OPTIONAL { ?port1 yw:hasAlias ?alias . }
+            }
+        }
+
+        {
+            SELECT ?port2 (COALESCE(?alias, ?name) AS ?name2)
+            WHERE {
+                {% select_workflow %}
+                ?block yw:hasNestedBlock ?nestedBlock2 .
+                ?nestedBlock2 yw:hasInput ?port2 .
+                ?port2 yw:hasName ?name .
+                OPTIONAL { ?port2 yw:hasAlias ?alias . }
+            }
+        }
+
+        FILTER (?name1 = ?name2)
+        BIND("nestedblock_to_nestedblock" AS ?flag)
+    }
+{% endtemplate %}
+
+{% template subquery_block_to_nestedblock %}
+    {
+        {
+            SELECT ?port1 (COALESCE(?alias, ?name) AS ?name1)
+            WHERE {
+                {% select_workflow %}
+                ?block yw:hasInput ?port1 .
+                ?port1 yw:hasName ?name .
+                OPTIONAL { ?port1 yw:hasAlias ?alias . }
+            }
+        }
+
+        {
+            SELECT ?port2 (COALESCE(?alias, ?name) AS ?name2)
+            WHERE {
+                {% select_workflow %}
+                ?block yw:hasNestedBlock ?nestedBlock .
+                ?nestedBlock yw:hasInput ?port2 .
+                ?port2 yw:hasName ?name .
+                OPTIONAL { ?port2 yw:hasAlias ?alias . }
+            }
+        }
+        
+        FILTER (?name1 = ?name2)
+        BIND("block_to_nestedblock" AS ?flag)
+    }
+{% endtemplate %}
+
+{% template subquery_nestedblock_to_block %}
+    {
+        {
+            SELECT ?port1 (COALESCE(?alias, ?name) AS ?name1)
+            WHERE {
+                {% select_workflow %}
+                ?block yw:hasNestedBlock ?nestedBlock .
+                ?nestedBlock yw:hasOutput ?port1 .
+                ?port1 yw:hasName ?name .
+                OPTIONAL { ?port1 yw:hasAlias ?alias . }
+            }
+        }
+
+        {
+            SELECT ?port2 (COALESCE(?alias, ?name) AS ?name2)
+            WHERE {
+                {% select_workflow %}
+                ?block yw:hasOutput ?port2 .
+                ?port2 yw:hasName ?name .
+                OPTIONAL { ?port2 yw:hasAlias ?alias . }
+            }
+        }
+        
+        FILTER (?name1 = ?name2)
+        BIND("nestedblock_to_block" AS ?flag)
+    }
+{% endtemplate %}
+
+{% template query_port_connects_to_channel %}
+    SELECT DISTINCT ?port1 ?port2 (?name1 AS ?name) ?flag
+    WHERE {
+        {% subquery_nestedblock_to_nestedblock %}
+        UNION
+        {% subquery_block_to_nestedblock %}
+        UNION
+        {% subquery_nestedblock_to_block %}
+    }
+{% endtemplate %}
+
+{% template subquery_channel_connected_by_toplevel_data %}
+    SELECT DISTINCT ?channel ?data
+    {
+        ?data rdf:type yw:Data .
+        ?data yw:hasQualifiedName ?qualified_name .
+
+        ?channel rdf:type yw:Channel .
+        ?channel (yw:hasInflow | yw:hasOutflow) ?port .
+        ?port yw:hasName ?name .
+        OPTIONAL { ?port yw:hasAlias ?alias . }
+        BIND(CONCAT("[", COALESCE(?alias, ?name), "]") AS ?generatedQualifiedName)
+
+        FILTER (?qualified_name = ?generatedQualifiedName)
+    }
+{% endtemplate %}
+
+{% template subquery_channel_connected_by_sublevel_data %}
+    SELECT DISTINCT ?channel ?data
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data yw:hasQualifiedName ?qualified_name .
+
+        ?channel rdf:type yw:Channel .
+        ?channel yw:hasPort ?port .
+        ?block rdf:type yw:Block .
+        ?block yw:hasNestedBlock/(yw:hasInput | yw:hasOutput) ?port .
+        ?block yw:hasName ?topName .
+        ?port yw:hasName ?name .
+        OPTIONAL { ?port yw:hasAlias ?alias . }
+        BIND(CONCAT(?topName, "[", COALESCE(?alias, ?name), "]") AS ?generatedQualifiedName)
+
+        FILTER (?qualified_name = ?generatedQualifiedName)
+    }
+{% endtemplate %}
+
+{% template query_channel_connected_by_data %}
+    SELECT ?channel ?data
+    WHERE{
+        {
+            {% subquery_channel_connected_by_toplevel_data %}
+        }
+        UNION
+        {
+            {% subquery_channel_connected_by_sublevel_data %}
+        }
+
+    }
+{% endtemplate %}
+
+{% template query_workflow_name %}
+    SELECT ?name
+    WHERE {
+        {% select_workflow %}
+        ?block yw:hasName ?name .
+    }
+{% endtemplate %}
+
+{% template query_atomic_programs_in_workflow %}
+    SELECT ?name ?comment
+    WHERE {
+        {% select_workflow %}
+        ?block yw:hasNestedBlock ?nestedBlock .
+        ?nestedBlock yw:hasName ?name .
+        ?nestedBlock rdfs:comment ?comment .
+    }
+{% endtemplate %}
+
+{% template query_data_name_in_workflow %}
+    SELECT ?data ?name
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data yw:hasName ?name .
+    }
+{% endtemplate %}
+
+{% template query_param_data_name_in_workflow %}
+    SELECT DISTINCT ?name
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data yw:hasName ?name .
+        ?data ^yw:isConnectedBy ?channel .
+        ?channel yw:hasPort ?port .
+        ?port rdf:type ?type
+        FILTER (?type = yw:PortParam)
+    }
+{% endtemplate %}
+
+{% template query_data_in_workflow flag %}
+    SELECT DISTINCT ?name (COALESCE (?uri, ?file, "NA") AS ?resource)
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data yw:hasName ?name .
+        ?data yw:isParam "{{ flag }}" .
+        ?data ^yw:isConnectedBy ?channel .
+        ?channel yw:hasPort ?port .
+        OPTIONAL { ?port yw:hasResourceUri ?uri . }
+        OPTIONAL { ?port yw:hasResourceFile ?file . }
+    } 
+    GROUP BY ?name
+{% endtemplate %}
+
+{% template query_edges_programs_and_channels %}
+    SELECT DISTINCT ?start_node ?end_node
+    WHERE {
+        {
+            ?data rdf:type yw:Data .
+            ?data ^yw:isConnectedBy ?channel .
+            ?channel yw:hasPort ?port .
+            ?port ^yw:hasInput ?block .
+            ?block yw:hasName ?end_node .
+            ?data yw:hasName ?start_node .
+        } 
+        UNION
+        {
+            ?data rdf:type yw:Data .
+            ?data ^yw:isConnectedBy ?channel .
+            ?channel yw:hasPort ?port .
+            ?port ^yw:hasOutput ?block .
+            ?block yw:hasName ?start_node .
+            ?data yw:hasName ?end_node .
+        }
+    }
+{% endtemplate %}
+
+{% template query_nodes_workflow_input_ports %}
+    SELECT DISTINCT ?input_port
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data ^yw:isConnectedBy ?channel .
+        ?channel yw:hasInflow ?port .
+        ?data yw:hasName ?input_port
+    }
+{% endtemplate %}
+
+{% template query_nodes_workflow_output_ports %}
+    SELECT DISTINCT ?output_port
+    WHERE {
+        ?data rdf:type yw:Data .
+        ?data ^yw:isConnectedBy ?channel .
+        ?channel yw:hasOutflow ?port .
+        ?data yw:hasName ?output_port
+    }
+{% endtemplate %}

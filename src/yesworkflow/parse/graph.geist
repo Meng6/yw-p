@@ -1,0 +1,111 @@
+{%- use "./src/yesworkflow/parse/templates.geist" %}
+{%- query "yw", datastore="rdflib", isfilepath=False as workflow_name %}
+    {% prefix %}
+    {% query_workflow_name %}
+{% endquery %}
+{%- query "yw", datastore="rdflib", isfilepath=False as atomic_programs_in_workflow %}
+    {% prefix %}
+    {% query_atomic_programs_in_workflow %}
+{% endquery %}
+{%- query "yw", datastore="rdflib", isfilepath=False as nonparam_data_in_workflow %}
+    {% prefix %}
+    {% query_data_in_workflow "false" %}
+{% endquery %}
+{%- query "yw", datastore="rdflib", isfilepath=False as param_data_in_workflow %}
+    {% prefix %}
+    {% query_data_in_workflow "true" %}
+{% endquery %}
+{%- query "yw", datastore="rdflib", isfilepath=False as edges_programs_and_channels %}
+    {% prefix %}
+    {% query_edges_programs_and_channels %}
+{% endquery %}
+{%- query "yw", datastore="rdflib", isfilepath=False as nodes_workflow_input_ports %}
+    {% prefix %}
+    {% query_nodes_workflow_input_ports %}
+{% endquery %}
+{%- query "yw", datastore="rdflib", isfilepath=False as nodes_workflow_output_ports %}
+    {% prefix %}
+    {% query_nodes_workflow_output_ports %}
+{% endquery %}
+
+/* Start of top-level graph */
+digraph Workflow {
+rankdir=TB
+
+/* Title for graph */
+fontname=Helvetica; fontsize=18; labelloc=t
+label={{ workflow_name.name.values[0] }}
+
+/* Start of double cluster for drawing box around nodes in workflow */
+subgraph cluster_workflow_box_outer { label=""; color=black; penwidth=2
+subgraph cluster_workflow_box_inner { label=""; penwidth=0
+
+/* Style for nodes representing atomic programs in workflow */
+node[shape=box style=filled fillcolor="#CCFFCC" peripheries=1 fontname=Helvetica]
+
+/* Nodes representing atomic programs in workflow */
+{% for _, row in atomic_programs_in_workflow.iterrows() %}
+{{ row["name"] }} [shape=record rankdir=LR label="{<f0> {{ row["name"] }} |<f1> {{ row["comment"].replace("{", "\\{").replace("}", "\\}").replace("\\n", "\\\\n") }}}"];
+{% endfor %}
+
+/* Style for nodes representing non-parameter data channels in workflow */
+node[shape=box style="rounded,filled" fillcolor="#FFFFCC" peripheries=1 fontname=Helvetica]
+
+/* Nodes for non-parameter data channels in workflow */
+{% for _, row in nonparam_data_in_workflow.iterrows() %}
+{%- if row["resource"] == "NA" %}
+{{ row["name"] }}
+{% else %}
+{{ row["name"] }} [shape=record rankdir=LR label="{<f0> {{ row["name"] }} |<f1> {{ row["resource"].replace("{", "\\{").replace("}", "\\}").replace("\\n", "\\\\n") }}}"];
+{% endif %}
+{% endfor %}
+
+/* Style for nodes representing parameter channels in workflow */
+node[shape=box style="rounded,filled" fillcolor="#FCFCFC" peripheries=1 fontname=Helvetica]
+
+/* Nodes representing parameter channels in workflow */
+{% for _, row in param_data_in_workflow.iterrows() %}
+{%- if row["resource"] == "NA" %}
+{{ row["name"] }}
+{% else %}
+{{ row["name"] }} [shape=record rankdir=LR label="{<f0> {{ row["name"] }} |<f1> {{ row["resource"].replace("{", "\\{").replace("}", "\\}").replace("\\n", "\\\\n") }}}"];
+{% endif %}
+{% endfor %}
+
+/* Edges representing connections between programs and channels */
+{% for _, row in edges_programs_and_channels.iterrows() %}
+{{ row["start_node"] }} -> {{ row["end_node"] }}
+{% endfor %}
+
+/* End of double cluster for drawing box around nodes in workflow */
+}}
+
+/* Style for nodes representing workflow input ports */
+node[shape=circle style="rounded,filled" fillcolor="#FFFFFF" peripheries=1 fontname=Helvetica width=0.2]
+
+/* Nodes representing workflow input ports */
+{% for input_port in nodes_workflow_input_ports["input_port"] %}
+{{ input_port }}_input_port [label=""]
+{% endfor %}
+
+/* Style for nodes representing workflow output ports */
+node[shape=circle style="rounded,filled" fillcolor="#FFFFFF" peripheries=1 fontname=Helvetica width=0.2]
+
+/* Nodes representing workflow output ports */
+{% for output_port in nodes_workflow_output_ports["output_port"] %}
+{{ output_port }}_output_port [label=""]
+{% endfor %}
+
+/* Edges from input ports to channels */
+{% for input_port in nodes_workflow_input_ports["input_port"] %}
+{{ input_port }}_input_port -> {{ input_port }}
+{% endfor %}
+
+/* Edges from channels to output ports */
+{% for output_port in nodes_workflow_output_ports["output_port"] %}
+{{ output_port }} -> {{ output_port }}_output_port
+{% endfor %}
+
+/* End of top-level graph */
+}
+{%- destroy "yw" %}
