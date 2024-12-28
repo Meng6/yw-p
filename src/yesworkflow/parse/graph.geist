@@ -45,7 +45,7 @@ node[shape=box style=filled fillcolor="#CCFFCC" peripheries=1 fontname=Helvetica
 
 /* Nodes representing atomic programs in workflow */
 {% for _, row in atomic_programs_in_workflow.iterrows() %}
-{{ row["name"] }} [shape=record rankdir=LR label="{<f0> {{ row["name"] }} |<f1> {{ row["comment"].replace("{", "\\{").replace("}", "\\}").replace("\\n", "\\\\n") }}}"];
+{{ row["name"] }} [shape=record rankdir=LR label="{<f0> {{ row["name"] }} |<f1> {{ row["comment"].replace("{", "\\{").replace("}", "\\}").replace("\n", "\\n") }}}"];
 {% endfor %}
 
 /* Style for nodes representing non-parameter data channels in workflow */
@@ -56,7 +56,7 @@ node[shape=box style="rounded,filled" fillcolor="#FFFFCC" peripheries=1 fontname
 {%- if row["resource"] == "NA" %}
 {{ row["name"] }}
 {% else %}
-{{ row["name"] }} [shape=record rankdir=LR label="{<f0> {{ row["name"] }} |<f1> {{ row["resource"].replace("{", "\\{").replace("}", "\\}").replace("\\n", "\\\\n") }}}"];
+{{ row["name"] }} [shape=record rankdir=LR label="{<f0> {{ row["name"] }} |<f1> {{ row["resource"].replace("{", "\\{").replace("}", "\\}").replace("\n", "\\n") }}}"];
 {% endif %}
 {% endfor %}
 

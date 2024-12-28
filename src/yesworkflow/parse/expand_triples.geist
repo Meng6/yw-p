@@ -1,41 +1,20 @@
 {%- use "./src/yesworkflow/parse/templates.geist" %}
 
 {% create "yw", datastore="rdflib", inputformat="nt", isfilepath=False %}
-    {{ model_triples }}
+    {@ model_triples @}
 {% endcreate %}
 
 {% load "yw", datastore="rdflib", inputformat="nt", isfilepath=False %}
-    {% if "{{ workflow }}" != "DEFAULT_WORKFLOW"  %}
-        {% query "yw", datastore="rdflib", isfilepath=False as workflow_block %}
-            {% prefix %}
-            {% query_workflow %}
-        {% endquery %}
-        {% set workflow_triple = workflow_block.block.values[0] + ' <https://www.openskope.org/yesworkflow/isTopLevelWorkflow> "true" .' %}
-    {% else %}
-        {% set workflow_triple = '<https://www.openskope.org/yesworkflow/block/1> <https://www.openskope.org/yesworkflow/isTopLevelWorkflow> "true" .' %}
-    {% endif %}
-    {{ workflow_triple }}
-{% endload %}
-
-{% load "yw", datastore="rdflib", inputformat="nt", isfilepath=False %}
-    {% query "yw", datastore="rdflib", isfilepath=False as toplevel_data %}
+    {% query "yw", datastore="rdflib", isfilepath=False as data %}
         {% prefix %}
-        {% query_toplevel_data %}
+        {% query_data %}
     {% endquery %}
-    {% for dataIdx, row in toplevel_data.iterrows() %}
+
+    {% for dataIdx, row in data.iterrows() %}
         <https://www.openskope.org/yesworkflow/data/{{ dataIdx + 1 }}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.openskope.org/yesworkflow/Data> .
         <https://www.openskope.org/yesworkflow/data/{{ dataIdx + 1 }}> <https://www.openskope.org/yesworkflow/hasName> "{{ row["name"] }}" .
         <https://www.openskope.org/yesworkflow/data/{{ dataIdx + 1 }}> <https://www.openskope.org/yesworkflow/hasQualifiedName> "{{ row["qualified_name"] }}" .
-    {% endfor %}
-    {% set curDataIdx = toplevel_data.shape[0] %}
-    {% query "yw", datastore="rdflib", isfilepath=False as sublevel_data %}
-        {% prefix %}
-        {% query_sublevel_data %}
-    {% endquery %}
-    {% for dataIdx, row in sublevel_data.iterrows() %}
-        <https://www.openskope.org/yesworkflow/data/{{ (dataIdx + 1) + curDataIdx }}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.openskope.org/yesworkflow/Data> .
-        <https://www.openskope.org/yesworkflow/data/{{ (dataIdx + 1) + curDataIdx }}> <https://www.openskope.org/yesworkflow/hasName> "{{ row["name"] }}" .
-        <https://www.openskope.org/yesworkflow/data/{{ (dataIdx + 1) + curDataIdx }}> <https://www.openskope.org/yesworkflow/hasQualifiedName> "{{ row["qualified_name"] }}" .
+        <https://www.openskope.org/yesworkflow/data/{{ dataIdx + 1 }}> <https://www.openskope.org/yesworkflow/isParam> "{{ row["is_param"] }}" .
     {% endfor %}
 {% endload %}
 
@@ -80,20 +59,14 @@
 {% endload %}
 
 {% load "yw", datastore="rdflib", inputformat="nt", isfilepath=False %}
-    {% query "yw", datastore="rdflib", isfilepath=False as param_data_name_in_workflow %}
-        {% prefix %}
-        {% query_param_data_name_in_workflow %}
-    {% endquery %}
-
-    {% query "yw", datastore="rdflib", isfilepath=False as data_name_in_workflow %}
-        {% prefix %}
-        {% query_data_name_in_workflow %}
-    {% endquery %}
-    {% for _, row in data_name_in_workflow.iterrows() %}
-        {% if row["name"] in param_data_name_in_workflow["name"].values %}
-            {{ row["data"] }} <https://www.openskope.org/yesworkflow/isParam> "true" .
-        {% else %}
-            {{ row["data"] }} <https://www.openskope.org/yesworkflow/isParam> "false" .
-        {% endif %}
-    {% endfor %}
+    {% if "{@ workflow @}" != "DEFAULT_WORKFLOW"  %}
+        {% query "yw", datastore="rdflib", isfilepath=False as workflow_block %}
+            {% prefix %}
+            {% query_workflow %}
+        {% endquery %}
+        {% set workflow_triple = workflow_block.block.values[0] + ' <https://www.openskope.org/yesworkflow/isTopLevelWorkflow> "true" .' %}
+    {% else %}
+        {% set workflow_triple = '<https://www.openskope.org/yesworkflow/block/1> <https://www.openskope.org/yesworkflow/isTopLevelWorkflow> "true" .' %}
+    {% endif %}
+    {{ workflow_triple }}
 {% endload %}
