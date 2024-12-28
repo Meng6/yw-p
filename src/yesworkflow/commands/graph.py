@@ -12,8 +12,8 @@ def graph(ctx, sources):
     # Extract annotations
     annotations = extract_annotations(properties, sources)
     # Get name of top-level workflow
-    workflow = "DEFAULT_WORKFLOW" if 'model.workflow' not in properties else properties['model.workflow']
-    layout = "TB" if 'graph.layout' not in properties else properties['graph.layout']
+    workflow = properties['model.workflow'] if ('model.workflow' in properties and properties['model.workflow']) else "DEFAULT_WORKFLOW"
+    layout = properties['graph.layout'] if ('graph.layout' in properties and properties['graph.layout']) else "TB"
     # Create model
     create_model('\n'.join(annotations), workflow)
     # Visualize the workflow

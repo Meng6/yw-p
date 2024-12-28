@@ -11,7 +11,7 @@ def model(ctx, sources):
     # Extract annotations
     annotations = extract_annotations(properties, sources)
     # Get name of top-level workflow
-    workflow = "DEFAULT_WORKFLOW" if 'model.workflow' not in properties else properties['model.workflow']
+    workflow = properties['model.workflow'] if ('model.workflow' in properties and properties['model.workflow']) else "DEFAULT_WORKFLOW"
     # Create model
     create_model('\n'.join(annotations), workflow)
     return

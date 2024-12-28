@@ -89,10 +89,7 @@ def create_model(script, workflow):
     model = YW2Model()
     walker.walk(model, tree)
 
-    # Find top-level workflow
-    workflow = workflow if workflow else "DEFAULT_WORKFLOW"
-    model_triples = "\n".join(model.triples)
     # Create a yw dataset: (1) add Data and Channel entities, and their relationships; (2)specify the workflow
-    geist.report(inputfile="./src/yesworkflow/parse/expand_triples.geist", isinputpath=True, args={"workflow": workflow, "model_triples": model_triples})
+    geist.report(inputfile="./src/yesworkflow/parse/expand_triples.geist", isinputpath=True, args={"workflow": workflow, "model_triples": "\n".join(model.triples)})
 
     return
