@@ -30,7 +30,7 @@
 
 /* Start of top-level graph */
 digraph Workflow {
-rankdir=TB
+rankdir={@ layout @}
 
 /* Title for graph */
 fontname=Helvetica; fontsize=18; labelloc=t
